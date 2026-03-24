@@ -7,3 +7,6 @@
 5. Copy boot.py (run at every boot -- connections & setup )
     - mpremote cp boot.py :boot.py 
 6. Copy main.py 
+
+![Digit & Segment](assets/digit_segment.excalidraw.svg)
+![Clock](assets/clock.excalidraw.svg)
