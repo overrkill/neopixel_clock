@@ -8,5 +8,5 @@
     - mpremote cp boot.py :boot.py 
 6. Copy main.py 
 
-![Digit & Segment](assets/digit_segment.excalidraw.svg)
+![Digit & Segment](assets/digit-segment.excalidraw.svg)
 ![Clock](assets/clock.excalidraw.svg)
