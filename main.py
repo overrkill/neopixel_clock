@@ -13,6 +13,7 @@ def getNumber(no):
     if no == 8 :return [1,1,1,1,1,1,1]
     if no == 9 :return [1,1,1,1,0,0,1]
     if no == 0 :return [1,1,1,1,1,1,0]
+    else :return [0,0,0,0,0,0,0]
     
 def setNtpTime():
     ntptime.settime()
@@ -24,10 +25,30 @@ def drawSeg(idx,i,np,color):
     np[start+2]=color
     np[start+3]=color
 
+def drawDigit(curr, prev ,index,np):
+    currSegs= getNumber(curr)
+    prevSegs= getNumber(prev)
+    
+    for i in range(0,7):
+        if(currSegs[i]==prevSegs[i]):#draw segment
+            pass
+        elif currSegs[i]==1:
+            drawSegbySeg(index*7+i,np,(10,10,0))
+        else:
+            drawSegbySeg(index*7+i,np,(0,0,0))#disable the segment
+        np.write()
+
+def drawSegbySeg(segNum,np,color):
+    start = segNum*4
+    np[start]=color
+    np[start+1]=color
+    np[start+2]=color
+    np[start+3]=color
+
 def drawNumber(idx, num,np):
     seg = getNumber(num)
     for i in range(0,7):
-        if seg[i]==1 :
+        if seg[i]==1:
             drawSeg(idx,i,np,(10,5,0))
 
 def ledTest(np):
@@ -35,6 +56,8 @@ def ledTest(np):
         np[i] = (int(0.8*i),int(0.4*i),int(0.2*i))
         np.write()
         time.sleep(0.5)
+
+
 def animation_box(np):
     segs = [0,1,2,9,16,17,18,19,12,5]
     for i in segs:
@@ -50,58 +73,51 @@ def animation_box(np):
         np[i*4+3] = (5*i,40,40)
         np.write()
         time.sleep(0.2)
-
+    np.fill((0,0,0))
 
 led = machine.Pin(2, machine.Pin.OUT)  # GPIO2 = onboard LED
 np = NeoPixel(led,92)
 # setNtpTime()
-
+prev = [None, None ,None , None]
 
 ntptime.settime()
+lastNtpUpdate = time.time()
 np.fill((0,0,0))
-animation_box(np)
-prevhh = 0 
-prevmm = 0 
-while True:
-    # animation_box(np)
-    # ledTest(np)
-    # np[0] = (0,0,0)
-    # time.sleep(0.5)
-    # np[0] = (10,10,10)
-    # np.write()
-    # time.sleep(0.5)
-    # np[0] = (0,0,0)
-    # np.write()
 
-    # np.write()
-    # time.sleep(0.5)
-    # time.sleep(10)
-    tm = time.localtime()
-    if prevhh != tm[3] or prevmm != tm[4] :
-        prevhh = tm[3] 
-        prevmm = tm[4]
-        mm = tm[4]
-        inc = 0
-        if(mm > 30):
-            mm = mm%30
-            inc = 1 
-        else:
-            mm = mm+30
-        m2 = mm%10 # minute units place 
-        m1 = mm//10 # minute tens 
-        hh = (tm[3]+5+inc)%12
-        if hh == 0 :
-            hh = 12
-        h2 = hh%10
-        h1 = hh//10
-        np.fill((0,0,0))
-        np.write()
-        drawNumber(0,m2,np)
-        drawNumber(1,m1,np)
-        drawNumber(2,h2,np)
-    # drawNumber(3,h1,np)
-        if(h1==1):
+np.write()
+# animation_box(np)
+# for i in range(0,23):
+#     np.fill((0,0,0))
+#     drawSegbySeg(i,np,(10,20,0))
+#     np.write()
+#     time.sleep(0.1)
+# for i in range(0,10):
+#     drawDigit(i,i-1,2,np)
+#     time.sleep(0.5)
+while True:
+    epo = time.time()
+    # global prev
+    tm = time.localtime(epo+19800)
+    hh = tm[3]%12
+    digits = [hh//10,hh%10,tm[4]//10,tm[4]%10]
+     
+    if (digits[0]!=prev[0] or digits[1]!=prev[1] or digits[2]!=prev[2] or digits[3]!=prev[3]) :
+        # prev=digits
+        # drawNumber(0,digits[3],np)
+        drawDigit(digits[3],prev[3],0,np)
+        drawDigit(digits[2],prev[2],1,np)
+        drawDigit(digits[1],prev[1],2,np)
+        # drawNumber(1,digits[2],np)
+        # drawNumber(2,digits[1],np)
+        # drawNumber(3,h1,np)
+        if(digits[0]==1 and prev[0] == 0):
             drawSeg(3,0,np,(5,5,0))
             drawSeg(3,1,np,(5,5,0))
-        np.write()
+        elif (digits[0]== 0 and prev[0] == 1) : 
+            drawSeg(3,0,np,(0,0,0))
+            drawSeg(3,1,np,(0,0,0))
+        else:
+            pass
+        prev=digits
+    np.write()
     time.sleep(10)
