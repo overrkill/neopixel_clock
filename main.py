@@ -2,18 +2,39 @@ import machine, time
 from neopixel import NeoPixel
 import ntptime
 
+# At the top of the file
+IST_OFFSET   = 19800
+NUM_PIXELS   = 92
+COLOR_ON     = (10, 10, 0)
+COLOR_OFF    = (0, 0, 0)
+DATA_PIN     = 2
+POLL_INTERVAL = 1000
+NTP_INTERVAL = 900000
+SEGMENTS = (
+    (1,1,0,0,0,0,0),#1
+    (0,1,1,0,1,1,1),#2
+    (1,1,1,0,0,1,1),#3
+    (1,1,0,1,0,0,1),#4
+    (1,0,1,1,0,1,1),#5
+    (1,0,1,1,1,1,1),#6
+    (1,1,1,0,0,0,1),#7
+    (1,1,1,1,1,1,1),#8
+    (1,1,1,1,0,0,1),#9
+    (1,1,1,1,1,1,0)#0
+)
 def getNumber(no):
-    if no == 1 :return [1,1,0,0,0,0,0]
-    if no == 2 :return [0,1,1,0,1,1,1]
-    if no == 3 :return [1,1,1,0,0,1,1]
-    if no == 4 :return [1,1,0,1,0,0,1]
-    if no == 5 :return [1,0,1,1,0,1,1]
-    if no == 6 :return [1,0,1,1,1,1,1]
-    if no == 7 :return [1,1,1,0,0,0,1]
-    if no == 8 :return [1,1,1,1,1,1,1]
-    if no == 9 :return [1,1,1,1,0,0,1]
-    if no == 0 :return [1,1,1,1,1,1,0]
-    else :return [0,0,0,0,0,0,0]
+    return SEGMENTS[no] if 0 <= no <= 9 else (0,0,0,0,0,0,0)
+    # if no == 1 :return [1,1,0,0,0,0,0]
+    # elif no == 2 :return [0,1,1,0,1,1,1]
+    # elif no == 3 :return [1,1,1,0,0,1,1]
+    # elif no == 4 :return [1,1,0,1,0,0,1]
+    # elif no == 5 :return [1,0,1,1,0,1,1]
+    # elif no == 6 :return [1,0,1,1,1,1,1]
+    # elif no == 7 :return [1,1,1,0,0,0,1]
+    # elif no == 8 :return [1,1,1,1,1,1,1]
+    # elif no == 9 :return [1,1,1,1,0,0,1]
+    # elif no == 0 :return [1,1,1,1,1,1,0]
+    # else :return [0,0,0,0,0,0,0]
     
 def setNtpTime():
     ntptime.settime()
@@ -36,7 +57,7 @@ def drawDigit(curr, prev ,index,np):
             drawSegbySeg(index*7+i,np,(10,10,0))
         else:
             drawSegbySeg(index*7+i,np,(0,0,0))#disable the segment
-        np.write()
+        
 
 def drawSegbySeg(segNum,np,color):
     start = segNum*4
@@ -75,15 +96,17 @@ def animation_box(np):
         time.sleep(0.2)
     np.fill((0,0,0))
 
-led = machine.Pin(2, machine.Pin.OUT)  # GPIO2 = onboard LED
-np = NeoPixel(led,92)
+led = machine.Pin(DATA_PIN, machine.Pin.OUT)  # GPIO2 = onboard LED
+np = NeoPixel(led,NUM_PIXELS)
 # setNtpTime()
 prev = [None, None ,None , None]
 
 ntptime.settime()
-lastNtpUpdate = time.time()
-np.fill((0,0,0))
+lastNtp = time.ticks_ms()
+lastPoll = time.ticks_ms()
 
+
+np.fill((0,0,0))
 np.write()
 # animation_box(np)
 # for i in range(0,23):
@@ -95,29 +118,51 @@ np.write()
 #     drawDigit(i,i-1,2,np)
 #     time.sleep(0.5)
 while True:
+    now = time.ticks_ms()
     epo = time.time()
     # global prev
-    tm = time.localtime(epo+19800)
+    tm = time.localtime(epo+IST_OFFSET)
     hh = tm[3]%12
-    digits = [hh//10,hh%10,tm[4]//10,tm[4]%10]
-     
-    if (digits[0]!=prev[0] or digits[1]!=prev[1] or digits[2]!=prev[2] or digits[3]!=prev[3]) :
-        # prev=digits
-        # drawNumber(0,digits[3],np)
-        drawDigit(digits[3],prev[3],0,np)
-        drawDigit(digits[2],prev[2],1,np)
-        drawDigit(digits[1],prev[1],2,np)
-        # drawNumber(1,digits[2],np)
-        # drawNumber(2,digits[1],np)
-        # drawNumber(3,h1,np)
-        if(digits[0]==1 and prev[0] == 0):
-            drawSeg(3,0,np,(5,5,0))
-            drawSeg(3,1,np,(5,5,0))
-        elif (digits[0]== 0 and prev[0] == 1) : 
-            drawSeg(3,0,np,(0,0,0))
-            drawSeg(3,1,np,(0,0,0))
-        else:
+            # hour[0], hour[1], minute[0], minute[1]
+    digits = [hh//10, hh%10,   m[4]//10,    tm[4]%10]
+    if time.ticks_diff(now, lastNtp) >= NTP_INTERVAL:
+        try:
+            ntptime.settime()
+        except:
             pass
-        prev=digits
-    np.write()
-    time.sleep(10)
+        lastNtp = now
+    
+    if time.ticks_diff(now, lastPoll) >=POLL_INTERVAL:
+        for i in range(0,4):
+            if digits[i] != prev[i]:
+                if i == 0:
+                    if digits[i] == 1:
+                        drawSegbySeg(21,np ,COLOR_ON)
+                        drawSegbySeg(22,np ,COLOR_ON)
+                    else :
+                        drawSegbySeg(21,np ,COLOR_OFF)
+                        drawSegbySeg(21,np ,COLOR_OFF)
+                else:
+                    drawDigit(digits[i],prev[i],3-i,np)
+                prev[i] = digits[i]
+        np.write()
+        lastPoll = now
+    # if (digits[0]!=prev[0] or digits[1]!=prev[1] or digits[2]!=prev[2] or digits[3]!=prev[3]) :
+    #     # prev=digits
+    #     # drawNumber(0,digits[3],np)
+    #     drawDigit(digits[3],prev[3],0,np)
+    #     drawDigit(digits[2],prev[2],1,np)
+    #     drawDigit(digits[1],prev[1],2,np)
+    #     # drawNumber(1,digits[2],np)
+    #     # drawNumber(2,digits[1],np)
+    #     # drawNumber(3,h1,np)
+    #     if(digits[0]==1 and prev[0] == 0):
+    #         drawSeg(3,0,np,(5,5,0))
+    #         drawSeg(3,1,np,(5,5,0))
+    #     elif (digits[0]== 0 and prev[0] == 1) : 
+    #         drawSeg(3,0,np,(0,0,0))
+    #         drawSeg(3,1,np,(0,0,0))
+    #     else:
+    #         pass
+    #     prev=digits
+    # time.sleep(10)
