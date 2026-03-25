@@ -25,20 +25,9 @@ SEGMENTS = {
     9:(1,1,1,1,0,0,1),#9
     0:(1,1,1,1,1,1,0)#0
     }
+
 def getNumber(no):
     return SEGMENTS.get(no, (0,0,0,0,0,0,0))
-    # if no == 1 :return [1,1,0,0,0,0,0]
-    # elif no == 2 :return [0,1,1,0,1,1,1]
-    # elif no == 3 :return [1,1,1,0,0,1,1]
-    # elif no == 4 :return [1,1,0,1,0,0,1]
-    # elif no == 5 :return [1,0,1,1,0,1,1]
-    # elif no == 6 :return [1,0,1,1,1,1,1]
-    # elif no == 7 :return [1,1,1,0,0,0,1]
-    # elif no == 8 :return [1,1,1,1,1,1,1]
-    # elif no == 9 :return [1,1,1,1,0,0,1]
-    # elif no == 0 :return [1,1,1,1,1,1,0]
-    # else :return [0,0,0,0,0,0,0]
-    
 
 def drawSeg(idx,i,np,color):
     start = (idx*28)+(4*i)
@@ -115,7 +104,6 @@ def digitCountdown(np):
 
 led = machine.Pin(DATA_PIN, machine.Pin.OUT)  # GPIO2 = onboard LED
 np = NeoPixel(led,NUM_PIXELS)
-# setNtpTime()
 prev = [None, None ,None , None]
 
 ntptime.settime()
@@ -127,8 +115,8 @@ np.fill((0,0,0))
 np.write()
 lastSec = False
 lastDateShown=False
-# animationBoxbySeg(np)
 digitCountdown(np)
+
 while True:
     now = time.ticks_ms()
     epo = time.time()
@@ -189,22 +177,3 @@ while True:
         lastSec= not lastSec
         np.write()
         lastPoll = now
-    # if (digits[0]!=prev[0] or digits[1]!=prev[1] or digits[2]!=prev[2] or digits[3]!=prev[3]) :
-    #     # prev=digits
-    #     # drawNumber(0,digits[3],np)
-    #     drawDigit(digits[3],prev[3],0,np)
-    #     drawDigit(digits[2],prev[2],1,np)
-    #     drawDigit(digits[1],prev[1],2,np)
-    #     # drawNumber(1,digits[2],np)
-    #     # drawNumber(2,digits[1],np)
-    #     # drawNumber(3,h1,np)
-    #     if(digits[0]==1 and prev[0] == 0):
-    #         drawSeg(3,0,np,(5,5,0))
-    #         drawSeg(3,1,np,(5,5,0))
-    #     elif (digits[0]== 0 and prev[0] == 1) : 
-    #         drawSeg(3,0,np,(0,0,0))
-    #         drawSeg(3,1,np,(0,0,0))
-    #     else:
-    #         pass
-    #     prev=digits
-    # time.sleep(10)
